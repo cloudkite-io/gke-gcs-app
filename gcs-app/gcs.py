@@ -19,14 +19,14 @@ class Gcs(object):
         blob = bucket.blob(file_name)
         blob.upload_from_string(contents)
         print(
-            "File {} uploaded to {}.".format(
-                file_name, file_name
+            "File {} uploaded to bucket {} as file {}.".format(
+                file_name, bucket_name, file_name
             )
         )
 
 if __name__ == '__main__':
     gcs = Gcs()
     bucket = os.getenv('BUCKET')
-    job_name = os.getenv('JOB_NAME')
+    job_name = os.getenv('JOB_NAME') + f"-{str(uuid.uuid4())}"
     contents = f"random-contents-{str(uuid.uuid4())}"
-    gcs.upload_blob(bucket, file_name, contents)
+    gcs.upload_blob(bucket, job_name, contents)

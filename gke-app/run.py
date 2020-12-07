@@ -24,7 +24,10 @@ def create():
             "JOB_NAME": job_name,
             "BUCKET": "bucket-upload-test-script",
         }
-        job = k8s.create_job(
+        labels =  {
+            "job": job_name
+        }
+        k8s.create_job(
             namespace=namespace,
             name=job_name,
             image=image,
