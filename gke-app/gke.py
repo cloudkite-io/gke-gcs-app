@@ -19,12 +19,12 @@ class K8s(object):
         config.load_incluster_config()
         self.configuration = kubernetes.client.Configuration()
         self.api_instance = client.BatchV1Api()
+        self.service_account_name = "gke-app" # name of the kubernetes service account
 
     def generate_job_name(self):
         time_split = str(time.time()).split('.')
         name = "job-" + time_split[0] + "-" + time_split[1]
         return name
-
 
     def create_job_object(self, name, image, labels, backoff_limit, env):
         # Configureate Pod template container
@@ -36,7 +36,7 @@ class K8s(object):
         # Create and configurate a spec section
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(labels=labels),
-            spec=client.V1PodSpec(restart_policy="Never", service_account_name="gke-app", containers=[container]))
+            spec=client.V1PodSpec(restart_policy="Never", service_account_name=self.service_account_name, containers=[container]))
         # Create the specification of deployment
         spec = client.V1JobSpec(template=template, backoff_limit=backoff_limit)
         # Instantiate the job object
