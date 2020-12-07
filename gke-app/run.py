@@ -1,7 +1,10 @@
+import uuid
+
 from flask_api import FlaskAPI
 from flask import request, jsonify
 
 from gke import K8s
+
 
 app = FlaskAPI(__name__)
 k8s = K8s()
@@ -9,34 +12,31 @@ k8s = K8s()
 
 @app.route('/jobs', methods = ['POST'])
 def create():
-    namespace = 'test'
     image = "gcr.io/cloudkite-dev/gcs-app"
-    labels = {
-        "env": "development"
-    }
-    env_vars = {
-        "BUCKET": "bucket-upload-test-script"
-    }
-    num_of_jobs = request.data.get('number_of_jobs')
-    backoff_limit = 4
-    job_name =[]
-
+    job_name = request.data.get('job_name', f"gcs-uploader-{str(uuid.uuid4())[:4]}")
+    namespace = request.data.get('namespace', 'demo')
+    num_of_jobs = request.data.get('num_of_jobs', 5)
     try:
-        for job_num in range(num_of_jobs):
-            name=k8s.generate_job_name()
-            env_vars['JOB_NAME'] = name
-            job = k8s.create_job(
-                namespace=namespace,
-                name=name,
-                image=image,
-                labels=labels,
-                backoff_limit=backoff_limit,
-                env_vars=env_vars)
-            job_name.append(name)
-            payload = {
-                "message": "The jobs have been created successfully",
-                "job_names": job_name
-            }
+        # Alternatives for job parallelism logic is to
+        # use spec.completions or spec.parallelism. See:
+        # https://kubernetes.io/docs/concepts/workloads/controllers/job/#parallel-jobs
+        env_vars = {
+            "JOB_NAME": job_name,
+            "BUCKET": "bucket-upload-test-script",
+        }
+        job = k8s.create_job(
+            namespace=namespace,
+            name=job_name,
+            image=image,
+            labels=labels,
+            completions=num_of_jobs,
+            backoff_limit=5,
+            env_vars=env_vars
+        )
+        payload = {
+            "message": f"Inserted {num_of_jobs} job(s)",
+            "job_name": job_name
+        }
     except Exception as e:
         payload = {
             "message": "Something went wrong data processing",
@@ -59,7 +59,7 @@ def list_jobs(namespace):
 @app.route('/jobs', methods = ['GET'])
 def get_job():
     job_name = request.args.get('job_name')
-    namespace = "test"
+    namespace = request.data.get('namespace', 'demo')
     try:
         job_status = k8s.get_job(namespace=namespace, name=job_name)
         payload = {

@@ -21,12 +21,7 @@ class K8s(object):
         self.api_instance = client.BatchV1Api()
         self.service_account_name = "gke-app" # name of the kubernetes service account
 
-    def generate_job_name(self):
-        time_split = str(time.time()).split('.')
-        name = "job-" + time_split[0] + "-" + time_split[1]
-        return name
-
-    def create_job_object(self, name, image, labels, backoff_limit, env):
+    def create_job_object(self, name, image, labels, completions, backoff_limit, env):
         # Configureate Pod template container
         container = client.V1Container(
             name=name,
@@ -38,7 +33,7 @@ class K8s(object):
             metadata=client.V1ObjectMeta(labels=labels),
             spec=client.V1PodSpec(restart_policy="Never", service_account_name=self.service_account_name, containers=[container]))
         # Create the specification of deployment
-        spec = client.V1JobSpec(template=template, backoff_limit=backoff_limit)
+        spec = client.V1JobSpec(template=template, completions=completions, backoff_limit=backoff_limit)
         # Instantiate the job object
         job = client.V1Job(
             api_version="batch/v1",
@@ -47,14 +42,14 @@ class K8s(object):
             spec=spec)
         return job
 
-    def create_job(self, namespace, name, image, labels, backoff_limit, env_vars):
+    def create_job(self, namespace, name, image, labels, completions, backoff_limit, env_vars):
         # env variables are passed as a tuple. This creates one from the dictionary
         env =[]
         for i in env_vars.keys():
             env.append(client.V1EnvVar(name=i, value=env_vars[i]))
 
         api_response = self.api_instance.create_namespaced_job(
-            body=self.create_job_object(name, image, labels, backoff_limit, env),
+            body=self.create_job_object(name, image, labels, completions, backoff_limit, env),
             namespace=namespace)
         return str(api_response)
 

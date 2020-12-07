@@ -1,4 +1,4 @@
-import logging, os, random, string, sys
+import uuid, logging, os, random, string, sys
 
 from google.cloud import storage
 
@@ -12,12 +12,12 @@ class Gcs(object):
         # Setup GCS configs
         self.storage_client = storage.Client()
 
-    def upload_blob(self, bucket_name, file_name):
+    def upload_blob(self, bucket_name, file_name, contents):
         """Uploads a file to the bucket."""
 
         bucket = self.storage_client.bucket(bucket_name)
-        blob = bucket.blob(file_name) # destination filename
-        blob.upload_from_string("This is the default message") #
+        blob = bucket.blob(file_name)
+        blob.upload_from_string(contents)
         print(
             "File {} uploaded to {}.".format(
                 file_name, file_name
@@ -27,5 +27,6 @@ class Gcs(object):
 if __name__ == '__main__':
     gcs = Gcs()
     bucket = os.getenv('BUCKET')
-    file_name = os.getenv('JOB_NAME')
-    gcs.upload_blob(bucket, file_name)
+    job_name = os.getenv('JOB_NAME')
+    contents = f"random-contents-{str(uuid.uuid4())}"
+    gcs.upload_blob(bucket, file_name, contents)
