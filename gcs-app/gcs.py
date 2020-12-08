@@ -27,6 +27,11 @@ class Gcs(object):
 if __name__ == '__main__':
     gcs = Gcs()
     bucket = os.getenv('BUCKET')
-    job_name = os.getenv('JOB_NAME') + f"-{str(uuid.uuid4())}"
+
+    # Generate a different file name per job run
+    file_name = f"{os.getenv('JOB_NAME')}-{str(uuid.uuid4())}"
+
+    # Generate some random data to upload to GCS
     contents = f"random-contents-{str(uuid.uuid4())}"
-    gcs.upload_blob(bucket, job_name, contents)
+
+    gcs.upload_blob(bucket, file_name, contents)
