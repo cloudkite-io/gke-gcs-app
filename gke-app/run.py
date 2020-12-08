@@ -14,8 +14,8 @@ k8s = K8s()
 def create():
     image = "gcr.io/cloudkite-dev/gcs-app"
     job_name = request.data.get('job_name', f"gcs-uploader-{str(uuid.uuid4())[:4]}")
-    namespace = request.data.get('namespace', 'demo')
-    num_of_jobs = request.data.get('num_of_jobs', 5)
+    namespace = request.data.get('namespace', 'test')
+    num_of_jobs = int(request.data.get('num_of_jobs', 5))
     try:
         # Alternatives for job parallelism logic is to
         # use spec.completions or spec.parallelism. See:
@@ -43,7 +43,7 @@ def create():
     except Exception as e:
         payload = {
             "message": "Something went wrong data processing",
-            "reason": str(e)
+            "reason": e
         }
     return jsonify(payload)
 
@@ -62,7 +62,7 @@ def list_jobs(namespace):
 @app.route('/jobs', methods = ['GET'])
 def get_job():
     job_name = request.args.get('job_name')
-    namespace = request.data.get('namespace', 'demo')
+    namespace = request.data.get('namespace', 'test')
     try:
         job_status = k8s.get_job(namespace=namespace, name=job_name)
         payload = {
@@ -73,7 +73,7 @@ def get_job():
     except Exception as e:
         payload = {
             "message": "Something went wrong data processing",
-            "reason": str(e)
+            "reason": e
         }
     return jsonify(payload)
 

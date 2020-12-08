@@ -51,7 +51,7 @@ class K8s(object):
         api_response = self.api_instance.create_namespaced_job(
             body=self.create_job_object(name, image, labels, completions, backoff_limit, env),
             namespace=namespace)
-        return str(api_response)
+        return api_response
 
     def get_jobs(self, namespace):
         api_response = self.api_instance.list_namespaced_job(
@@ -65,8 +65,18 @@ class K8s(object):
         return jobs
 
     def get_job(self, namespace, name):
-        api_response = self.api_instance.read_namespaced_job(
-            name=name,
-            namespace=namespace
-        )
-        return api_response.status.conditions[0].type
+        try:
+            api_response = self.api_instance.read_namespaced_job(
+                name=name,
+                namespace=namespace
+            )
+            return {
+                "active": api_response.status.active,
+                "completion_time": api_response.status.completion_time,
+                "failed": api_response.status.failed,
+                "start_time": api_response.status.start_time,
+                "succeeded": api_response.status.succeeded
+            }
+        except ApiException as e:
+            print("Exception when calling BatchV1Api->read_namespaced_job_status: %s\n" % e)
+            raise
